@@ -1,33 +1,22 @@
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { FaBars, FaTimes } from "react-icons/fa"
 import gsap from "gsap"
 import ReactLogo from "../assets/logo.svg"
 
 const Navbar = () => {
-  // State to manage the open/close state of the mobile menu
-  const [isOpen, setIsOpen] = useState(false)
-  // State to manage whether the navbar is over the specific background
-  const [isOverBg, setIsOverBg] = useState(false)
-
-  // Ref for the text element
+  const isOpen = useRef(false) // Use useRef to manage menu state
+  const isOverBg = useRef(false) // Use useRef to track background state
   const textRef = useRef(null)
 
   // Toggle the mobile menu open/closed and manage scroll
   const toggleMenu = () => {
-    setIsOpen(!isOpen)
-
-    if (!isOpen) {
-      // Disable scrolling when menu is open
-      document.body.classList.add("overflow-hidden")
-    } else {
-      // Re-enable scrolling when menu is closed
-      document.body.classList.remove("overflow-hidden")
-    }
+    isOpen.current = !isOpen.current
+    document.body.classList.toggle("overflow-hidden", isOpen.current)
   }
 
   // Close the mobile menu and re-enable scrolling
   const closeMenu = () => {
-    setIsOpen(false)
+    isOpen.current = false
     document.body.classList.remove("overflow-hidden")
   }
 
@@ -35,46 +24,33 @@ const Navbar = () => {
   useEffect(() => {
     const handleScroll = () => {
       const targetSection = document.querySelector(".bg-target")
-
       if (targetSection) {
-        const rect = targetSection.getBoundingClientRect()
-
-        // If the navbar is over the section with the #E2E8F0 background
-        if (rect.top <= 0 && rect.bottom >= 0) {
-          setIsOverBg(true)
-        } else {
-          setIsOverBg(false)
-        }
+        const { top, bottom } = targetSection.getBoundingClientRect()
+        isOverBg.current = top <= 0 && bottom >= 0
       }
     }
 
     window.addEventListener("scroll", handleScroll)
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll)
-    }
+    return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
   // GSAP animation for hover
   useEffect(() => {
     const textElement = textRef.current
+    const hoverAnimation = (color) =>
+      gsap.to(textElement, {
+        color,
+        duration: color === "#ff6347" ? 0.1 : 0.2,
+        ease: "power1.inOut",
+      })
 
     if (textElement) {
-      textElement.addEventListener("mouseenter", () => {
-        gsap.to(textElement, {
-          color: "#ff6347", // Change to a different color (e.g., tomato)
-          duration: 0.1,
-          ease: "power1.inOut",
-        })
-      })
-
-      textElement.addEventListener("mouseleave", () => {
-        gsap.to(textElement, {
-          color: isOverBg ? "#000000" : "#F1F5F9", // Black or slate depending on background
-          duration: 0.2,
-          ease: "power1.inOut",
-        })
-      })
+      textElement.addEventListener("mouseenter", () =>
+        hoverAnimation("#ff6347")
+      )
+      textElement.addEventListener("mouseleave", () =>
+        hoverAnimation(isOverBg.current ? "#083344" : "#F1F5F9")
+      )
     }
 
     return () => {
@@ -83,49 +59,46 @@ const Navbar = () => {
         textElement.removeEventListener("mouseleave", null)
       }
     }
-  }, [isOverBg]) // Re-run effect when background color changes
+  }, [isOverBg.current])
 
   return (
     <nav className="fixed top-0 left-0 z-50 flex items-center justify-between w-full p-4 bg-transparent">
-      {/* Logo positioned on the far left */}
       <div className="flex items-center">
         <img src={ReactLogo} alt="React Logo" className="h-8 w-15" />
       </div>
 
-      {/* Flex container for the link and menu button on the far right */}
       <div className="flex items-center ml-auto">
         <a
           href="#"
           ref={textRef}
           className={`z-20 hidden mr-4 text-lg font-semibold transition duration-300 md:block ${
-            isOverBg ? "text-black" : "text-slate-100"
+            isOverBg.current ? "text-cyan-950" : "text-slate-100"
           }`}
         >
           Let&apos;s Create Something Together
         </a>
-        {/* Menu button for toggling mobile menu */}
         <button
           onClick={toggleMenu}
           className={`z-50 text-2xl transition-transform duration-300 transform focus:outline-none ${
-            isOverBg ? "text-black" : "text-white"
+            isOverBg.current ? "text-cyan-950" : "text-white"
           }`}
           aria-label="Menu button"
         >
-          {/* Rotate the icon based on state */}
           <div
             className={`transition-transform duration-300 ${
-              isOpen ? "rotate-90" : "rotate-0"
+              isOpen.current ? "rotate-90" : "rotate-0"
             }`}
           >
-            {isOpen ? <FaTimes /> : <FaBars />}
+            {isOpen.current ? <FaTimes /> : <FaBars />}
           </div>
         </button>
       </div>
 
-      {/* Fullscreen menu overlay for mobile view */}
       <div
         className={`fixed inset-0 z-40 flex flex-col items-center justify-center transition-all duration-500 ease-in-out ${
-          isOpen ? "bg-black opacity-100" : "opacity-0 pointer-events-none"
+          isOpen.current
+            ? "bg-black opacity-100"
+            : "opacity-0 pointer-events-none"
         }`}
       >
         <ul
@@ -133,15 +106,15 @@ const Navbar = () => {
           onClick={(e) => e.stopPropagation()} // Prevent closing when clicking on the list
         >
           <li className="absolute left-0 text-2xl -top-10">Menu</li>
-          <li onClick={closeMenu} className="cursor-pointer hover:underline">
-            About
-          </li>
-          <li onClick={closeMenu} className="cursor-pointer hover:underline">
-            Our Projects
-          </li>
-          <li onClick={closeMenu} className="cursor-pointer hover:underline">
-            Contact Us
-          </li>
+          {["About", "Our Projects", "Contact Us"].map((item) => (
+            <li
+              key={item}
+              onClick={closeMenu}
+              className="cursor-pointer hover:underline"
+            >
+              {item}
+            </li>
+          ))}
         </ul>
       </div>
     </nav>

@@ -43,7 +43,7 @@ const AboutUs = () => {
       {/* Image section: Adjusts for responsive design, centered on small screens */}
       <div ref={imageRef} className="w-full mb-4 md:w-1/2 md:mb-0">
         <img
-          src="./public/section3.jpg" // Placeholder image path
+          src="/section3.jpg"
           alt="About Us Image"
           className="rounded-lg shadow-lg"
         />
